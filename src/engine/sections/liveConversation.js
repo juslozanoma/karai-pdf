@@ -398,14 +398,23 @@ export function connectLiveWebSocket() {
   };
 
   state.liveWs.onerror = () => {
-    logApiUsage(state.GEMINI_LIVE_MODEL, null, true, 'Error de conexión WebSocket');
-    updateLiveStatus('Error de conexión', 'error');
+    const friendly =
+      'No se pudo conectar la conversación en vivo. Verifica tu API key y que el modelo en vivo configurado sea válido.';
+    logApiUsage(state.GEMINI_LIVE_MODEL, null, true, friendly);
+    updateLiveStatus(friendly, 'error');
   };
 
-  state.liveWs.onclose = () => {
+  state.liveWs.onclose = (event) => {
     state.liveSetupComplete = false;
     if (state.liveSessionActive) {
-      updateLiveStatus('Conexión finalizada', 'error');
+      const reason =
+        event && event.code && event.code !== 1000
+          ? `La conversación en vivo se cerró (código ${event.code}). Revisa tu API key y el modelo en vivo.`
+          : 'Conexión finalizada';
+      if (event && event.code && event.code !== 1000) {
+        logApiUsage(state.GEMINI_LIVE_MODEL, null, true, reason);
+      }
+      updateLiveStatus(reason, 'error');
       closeLiveConversation();
     }
   };

@@ -21,6 +21,107 @@ export function saveApiUsageStatsObj(stats) {
   } catch (e) {}
 }
 
+// Traduce un código de estado HTTP de la API de Gemini a un mensaje claro en español,
+// agregando el detalle que devuelve el servidor (si lo hay). Así, en vez de ver solo
+// "API: 401" o "Ocurrió un error", el usuario entiende qué pasó y qué hacer.
+export function describeApiError(status, serverMessage) {
+  const detail = serverMessage ? ` Detalle: ${String(serverMessage).trim()}` : '';
+  switch (status) {
+    case 400:
+      return `Solicitud inválida (400). El modelo o los parámetros enviados no son válidos.${detail}`;
+    case 401:
+      return `Clave de API inválida, revocada o cuenta deshabilitada (401). Configura una API key válida de Gemini en Ajustes avanzados.${detail}`;
+    case 403:
+      return `Permiso denegado (403). La clave de API no tiene acceso a este recurso o modelo.${detail}`;
+    case 404:
+      return `Modelo no encontrado (404). El nombre del modelo no existe o no está disponible para tu clave.${detail}`;
+    case 429:
+      return `Límite de uso excedido (429). Se agotó la cuota o se hicieron demasiadas peticiones seguidas; espera un momento e inténtalo de nuevo.${detail}`;
+    case 500:
+    case 502:
+    case 503:
+    case 504:
+      return `Error temporal del servidor de Gemini (${status}). Vuelve a intentarlo en unos segundos.${detail}`;
+    default:
+      return serverMessage
+        ? `Error de la API de Gemini (${status}): ${String(serverMessage).trim()}`
+        : `Error de la API de Gemini (${status}).${detail}`;
+  }
+}
+
+// Lee el cuerpo de una respuesta de error de la API y devuelve el mensaje claro ya armado.
+export async function apiErrorFromResponse(response) {
+  let serverMessage = '';
+  try {
+    const body = await response.json();
+    serverMessage = (body && body.error && body.error.message) || '';
+  } catch (e) {}
+  return describeApiError(response.status, serverMessage);
+}
+
+// Normaliza cualquier error lanzado (red, JSON, etc.) a un mensaje entendible.
+export function describeThrownError(error) {
+  const raw = error && error.message ? String(error.message) : String(error || '');
+  if (!raw || /failed to fetch|networkerror|load failed|fetch failed/i.test(raw)) {
+    return 'No se pudo conectar con el servicio de Gemini. Revisa tu conexión a internet e inténtalo de nuevo.';
+  }
+  return raw;
+}
+
+// -----------------------------------------------------------------------------------------------
+// Contador de advertencias de API (bandeja de errores del botón de la barra superior)
+// -----------------------------------------------------------------------------------------------
+function renderApiErrorBadge(count) {
+  const el = state.topbarApiWarningsCount;
+  if (!el) return;
+  if (count > 0) {
+    el.textContent = count > 99 ? '99+' : String(count);
+    el.classList.remove('hidden');
+    el.classList.add('flex');
+  } else {
+    el.textContent = '';
+    el.classList.add('hidden');
+    el.classList.remove('flex');
+  }
+}
+
+export function getApiErrorBadgeCount() {
+  const n = parseInt(localStorage.getItem(state.API_ERROR_BADGE_STORAGE_KEY) || '0', 10);
+  return Number.isFinite(n) && n > 0 ? n : 0;
+}
+
+export function setApiErrorBadgeCount(count) {
+  const val = Math.max(0, Math.floor(count) || 0);
+  try {
+    if (val > 0) localStorage.setItem(state.API_ERROR_BADGE_STORAGE_KEY, String(val));
+    else localStorage.removeItem(state.API_ERROR_BADGE_STORAGE_KEY);
+  } catch (e) {}
+  renderApiErrorBadge(val);
+}
+
+export function clearApiErrorBadge() {
+  setApiErrorBadgeCount(0);
+}
+
+export function refreshApiErrorBadge() {
+  renderApiErrorBadge(getApiErrorBadgeCount());
+}
+
+export function apiErrorLegendHtml() {
+  return `
+    <details class="mb-3 text-xs text-gray-500 bg-gray-50 rounded p-2">
+      <summary class="cursor-pointer font-semibold text-gray-600">¿Qué significa cada código?</summary>
+      <ul class="mt-2 space-y-1 list-disc pl-4">
+        <li><b>400</b> — Solicitud inválida: modelo o parámetros incorrectos.</li>
+        <li><b>401</b> — Clave de API inválida, revocada o cuenta deshabilitada.</li>
+        <li><b>403</b> — La clave no tiene permiso para ese modelo o recurso.</li>
+        <li><b>404</b> — El modelo no existe o no está disponible para tu clave.</li>
+        <li><b>429</b> — Cuota o velocidad de peticiones excedida (espera un momento).</li>
+        <li><b>5xx</b> — Error temporal del servidor de Gemini (reintenta).</li>
+      </ul>
+    </details>`;
+}
+
 export function logApiUsage(model, usageMetadata, isError, errorMessage) {
   const stats = loadApiUsageStats();
   const statsKey = `${state.apiKey}::${model}`;
@@ -39,8 +140,9 @@ export function logApiUsage(model, usageMetadata, isError, errorMessage) {
   entry.calls++;
   if (isError) {
     entry.errors++;
-    entry.lastError = (errorMessage || 'Error desconocido').toString().slice(0, 200);
+    entry.lastError = (errorMessage || 'Error desconocido').toString().slice(0, 300);
     entry.lastErrorAt = new Date().toLocaleString('es-CO');
+    setApiErrorBadgeCount(getApiErrorBadgeCount() + 1);
   }
   if (usageMetadata) {
     entry.promptTokens += usageMetadata.promptTokenCount || 0;
@@ -57,10 +159,12 @@ export function renderApiUsagePanel() {
   const container = document.getElementById('api-usage-content');
   const entries = Object.entries(stats).filter(([k]) => k.startsWith(`${state.apiKey}::`));
   if (entries.length === 0) {
-    container.innerHTML = `<p class="text-xs text-gray-500 text-center py-6">Todavía no hay llamadas registradas con la clave de API actual.</p>`;
+    container.innerHTML = `${apiErrorLegendHtml()}<p class="text-xs text-gray-500 text-center py-6">Todavía no hay llamadas registradas con la clave de API actual.</p>`;
     return;
   }
-  container.innerHTML = entries
+  container.innerHTML =
+    apiErrorLegendHtml() +
+    entries
     .map(
       ([, e]) => `
                 <div class="border rounded-lg p-3 mb-2">
@@ -95,17 +199,27 @@ export async function fetchGemini(prompt, isTranslation = false) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (!response.ok) throw new Error(`API: ${response.status}`);
+      if (!response.ok) {
+        const friendly = await apiErrorFromResponse(response);
+        // Los errores de cliente (4xx) no se solucionan reintentando: la clave o el
+        // modelo no van a cambiar solos, así que se reportan de inmediato.
+        if (response.status >= 400 && response.status < 500) {
+          logApiUsage(state.GEMINI_MODEL, null, true, friendly);
+          return isTranslation ? null : friendly;
+        }
+        throw new Error(friendly);
+      }
       const data = await response.json();
       if (data.candidates && data.candidates[0].content.parts[0].text) {
         logApiUsage(state.GEMINI_MODEL, data.usageMetadata, false);
         return data.candidates[0].content.parts[0].text.trim();
       }
-      throw new Error('Formato de respuesta inesperado');
+      throw new Error('Formato de respuesta inesperado del servidor de Gemini.');
     } catch (error) {
+      const friendly = describeThrownError(error);
       if (i === 2) {
-        logApiUsage(state.GEMINI_MODEL, null, true, error.message);
-        return isTranslation ? null : 'Ocurrió un error.';
+        logApiUsage(state.GEMINI_MODEL, null, true, friendly);
+        return isTranslation ? null : friendly;
       }
       await state.delay(1000 * (i + 1));
     }
@@ -130,17 +244,25 @@ export async function fetchGeminiWithModel(
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       });
-      if (!response.ok) throw new Error(`API: ${response.status}`);
+      if (!response.ok) {
+        const friendly = await apiErrorFromResponse(response);
+        if (response.status >= 400 && response.status < 500) {
+          logApiUsage(modelName, null, true, friendly);
+          return isTranslation ? null : friendly;
+        }
+        throw new Error(friendly);
+      }
       const data = await response.json();
       if (data.candidates && data.candidates[0].content.parts[0].text) {
         logApiUsage(modelName, data.usageMetadata, false);
         return data.candidates[0].content.parts[0].text.trim();
       }
-      throw new Error('Formato de respuesta inesperado');
+      throw new Error('Formato de respuesta inesperado del servidor de Gemini.');
     } catch (error) {
+      const friendly = describeThrownError(error);
       if (i === 2) {
-        logApiUsage(modelName, null, true, error.message);
-        return isTranslation ? null : 'Ocurrió un error.';
+        logApiUsage(modelName, null, true, friendly);
+        return isTranslation ? null : friendly;
       }
       await state.delay(1000 * (i + 1));
     }

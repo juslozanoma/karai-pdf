@@ -5,7 +5,7 @@
 // ===============================================================================================
 
 import { state } from '../state.js';
-import { logApiUsage } from './geminiConfig.js';
+import { logApiUsage, apiErrorFromResponse, describeThrownError } from './geminiConfig.js';
 import { getReadingLanguageName, t } from './i18nRuntime.js';
 import { speakAIResponse } from './liveConversation.js';
 import { stopSpeech } from './subtitleHighlight.js';
@@ -341,7 +341,7 @@ export async function processChatQueryWithImage(base64Img, questionText = '') {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payloadContent),
     });
-    if (!response.ok) throw new Error('API Error');
+    if (!response.ok) throw new Error(await apiErrorFromResponse(response));
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder('utf-8');
@@ -409,10 +409,10 @@ export async function processChatQueryWithImage(base64Img, questionText = '') {
     }
     addVolumeButtonToAssistantBubble(bubbleEl, assistantResponse);
   } catch (error) {
-    logApiUsage(state.GEMINI_MODEL, null, true, error.message);
-    const errorMsg = 'Error al conectar con la IA visual.';
-    bubbleEl.textContent = errorMsg;
-    addVolumeButtonToAssistantBubble(bubbleEl, errorMsg);
+    const friendly = describeThrownError(error);
+    logApiUsage(state.GEMINI_MODEL, null, true, friendly);
+    bubbleEl.textContent = friendly;
+    addVolumeButtonToAssistantBubble(bubbleEl, friendly);
     state.chatContext.pop();
   }
 }
@@ -454,7 +454,8 @@ export async function processChatQueryStreaming(questionText) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payloadContent),
     });
-    if (!response.ok || !response.body) throw new Error(`API: ${response.status}`);
+    if (!response.ok) throw new Error(await apiErrorFromResponse(response));
+    if (!response.body) throw new Error('El servidor no devolvió respuesta (stream vacío).');
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder('utf-8');
@@ -522,10 +523,10 @@ export async function processChatQueryStreaming(questionText) {
     }
     addVolumeButtonToAssistantBubble(bubbleEl, assistantResponse);
   } catch (error) {
-    logApiUsage(state.GEMINI_MODEL, null, true, error.message);
-    const errorMsg = 'Error al conectar con la IA.';
-    bubbleEl.textContent = errorMsg;
-    addVolumeButtonToAssistantBubble(bubbleEl, errorMsg);
+    const friendly = describeThrownError(error);
+    logApiUsage(state.GEMINI_MODEL, null, true, friendly);
+    bubbleEl.textContent = friendly;
+    addVolumeButtonToAssistantBubble(bubbleEl, friendly);
     state.chatContext.pop();
   }
 }

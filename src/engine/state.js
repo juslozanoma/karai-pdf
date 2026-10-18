@@ -56,6 +56,7 @@ export function initState() {
   state.GEMINI_LIVE_MODEL =
     localStorage.getItem('pdfReaderLiveModelOverride') || state.DEFAULT_GEMINI_LIVE_MODEL;
   state.API_USAGE_STORAGE_KEY = 'pdfReaderApiUsageStats_v1';
+  state.API_ERROR_BADGE_STORAGE_KEY = 'pdfReaderApiErrorBadge_v1';
   state.delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
   state.documentObj = null;
   state.currentScale = 1.5;
@@ -713,6 +714,8 @@ export function initState() {
   state.topbarZoomPct = document.getElementById('topbar-zoom-pct');
   state.topbarProgress = document.getElementById('topbar-progress');
   state.topbarBtnClock = document.getElementById('topbar-btn-clock');
+  state.topbarApiWarningsBtn = document.getElementById('topbar-btn-api-warnings');
+  state.topbarApiWarningsCount = document.getElementById('topbar-api-warnings-count');
   state.docSessionStartTime = null;
   state.progressTooltipEl = document.getElementById('progress-tooltip');
   state.progressTooltipStartEl = document.getElementById('progress-tooltip-start');

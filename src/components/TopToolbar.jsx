@@ -31,6 +31,10 @@ export default function TopToolbar() {
         <button id="topbar-btn-fullscreen" className="w-8 h-8 flex items-center justify-center rounded-md text-[#e8eaed] hover:bg-white/10 active:bg-white/20 transition shrink-0" title="Pantalla completa (Z)" data-i18n-title="topbar_btn_fullscreen_title">
             <i id="topbar-icon-fullscreen" data-lucide="expand" className="w-[18px] h-[18px]"></i>
         </button>
+        <button id="topbar-btn-api-warnings" className="relative w-8 h-8 flex items-center justify-center rounded-md text-[#e8eaed] hover:bg-white/10 active:bg-white/20 transition shrink-0" title="Errores de API (clic para ver el detalle)" data-i18n-title="topbar_btn_api_warnings_title">
+            <i data-lucide="triangle-alert" className="w-[18px] h-[18px]"></i>
+            <span id="topbar-api-warnings-count" className="hidden absolute -top-0.5 -right-0.5 min-w-[15px] h-[15px] px-1 items-center justify-center rounded-full bg-red-500 text-white text-[9px] font-bold leading-none"></span>
+        </button>
         <button id="topbar-btn-help" className="w-8 h-8 flex items-center justify-center rounded-md text-[#e8eaed] hover:bg-white/10 active:bg-white/20 transition shrink-0" title="Ayuda sobre botones (Q)" data-i18n-title="topbar_btn_help_title">
             <i data-lucide="circle-help" className="w-[18px] h-[18px]"></i>
         </button>

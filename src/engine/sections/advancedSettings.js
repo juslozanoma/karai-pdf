@@ -5,7 +5,7 @@
 // ===============================================================================================
 
 import { state } from '../state.js';
-import { renderApiUsagePanel } from './geminiConfig.js';
+import { renderApiUsagePanel, clearApiErrorBadge, refreshApiErrorBadge } from './geminiConfig.js';
 import { t } from './i18nRuntime.js';
 import { announceShortcut } from './keyboardShortcuts.js';
 
@@ -69,6 +69,18 @@ export function initAdvancedSettingsSection() {
     document.getElementById('api-usage-panel').classList.remove('hidden');
     document.getElementById('api-usage-panel').classList.add('flex');
   });
+  // Botón de advertencia de la barra superior: muestra el número de errores acumulados
+  // desde la última vez que se abrió el panel. Al hacer clic abre el panel de errores y
+  // borra el contador (la notificación desaparece hasta que ocurra un error nuevo).
+  if (state.topbarApiWarningsBtn) {
+    state.topbarApiWarningsBtn.addEventListener('click', () => {
+      renderApiUsagePanel();
+      document.getElementById('api-usage-panel').classList.remove('hidden');
+      document.getElementById('api-usage-panel').classList.add('flex');
+      clearApiErrorBadge();
+    });
+  }
+  refreshApiErrorBadge();
   document.getElementById('btn-close-api-usage').addEventListener('click', () => {
     document.getElementById('api-usage-panel').classList.add('hidden');
     document.getElementById('api-usage-panel').classList.remove('flex');

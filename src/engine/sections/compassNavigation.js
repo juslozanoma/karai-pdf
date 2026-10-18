@@ -5,6 +5,7 @@
 // ===============================================================================================
 
 import { state } from '../state.js';
+import { logApiUsage, apiErrorFromResponse } from './geminiConfig.js';
 import { scrollToPage } from './pageNavigation.js';
 import { showStatus } from './subtitleHighlight.js';
 
@@ -113,14 +114,19 @@ Instrucciones CRÍTICAS:
       body: JSON.stringify(payload),
     });
 
-    if (response.ok) {
-      const data = await response.json();
-      if (data.candidates && data.candidates[0].content.parts[0].text) {
-        const result = JSON.parse(data.candidates[0].content.parts[0].text.trim());
-        if (result && result.page) {
-          finishCompassNavigation({ page: result.page });
-          return;
-        }
+    if (!response.ok) {
+      const friendly = await apiErrorFromResponse(response);
+      logApiUsage(state.GEMINI_MODEL, null, true, friendly);
+      showStatus(friendly, true);
+      setTimeout(() => showStatus('', false), 5000);
+      return;
+    }
+    const data = await response.json();
+    if (data.candidates && data.candidates[0].content.parts[0].text) {
+      const result = JSON.parse(data.candidates[0].content.parts[0].text.trim());
+      if (result && result.page) {
+        finishCompassNavigation({ page: result.page });
+        return;
       }
     }
   } catch (e) {
