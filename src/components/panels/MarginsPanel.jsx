@@ -83,15 +83,15 @@ export default function MarginsPanel() {
                      y conversación en vivo), cada uno con su propia opción de reemplazo. */}
                 <div className="pt-3 border-t">
                     <label className="block text-xs text-gray-600 mb-1 font-sans font-semibold"><span data-i18n="txt_015">Modelo de IA (chat, brújula, consultas)</span></label>
-                    <input type="text" id="advanced-model-input" className="w-full text-sm border rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#7C3AED]" placeholder="gemini-2.5-flash-lite" data-i18n-placeholder="advanced_model_input_ph" />
+                    <input type="text" id="advanced-model-input" className="w-full text-sm border rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#7C3AED]" placeholder="gemini-3.1-flash-lite" data-i18n-placeholder="advanced_model_input_ph" />
                 </div>
                 <div>
                     <label className="block text-xs text-gray-600 mb-1 font-sans font-semibold"><span data-i18n="adv_study_model_label">Modelo de IA (traducción y Modo Estudio)</span></label>
-                    <input type="text" id="advanced-study-model-input" className="w-full text-sm border rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#7C3AED]" placeholder="gemini-3.1-flash-lite" data-i18n-placeholder="advanced_study_model_input_ph" />
+                    <input type="text" id="advanced-study-model-input" className="w-full text-sm border rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#7C3AED]" placeholder="gemini-3.5-flash-lite" data-i18n-placeholder="advanced_study_model_input_ph" />
                 </div>
                 <div>
                     <label className="block text-xs text-gray-600 mb-1 font-sans font-semibold"><span data-i18n="adv_live_model_label">Modelo de IA (conversación en vivo)</span></label>
-                    <input type="text" id="advanced-live-model-input" className="w-full text-sm border rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#7C3AED]" placeholder="gemini-3.1-flash-live-preview" data-i18n-placeholder="advanced_live_model_input_ph" />
+                    <input type="text" id="advanced-live-model-input" className="w-full text-sm border rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-[#7C3AED]" placeholder="gemini-3.8-live-extended-thinking" data-i18n-placeholder="advanced_live_model_input_ph" />
                 </div>
                 <div>
                     <label className="block text-xs text-gray-600 mb-1 font-sans font-semibold"><span data-i18n="txt_016">Clave de API (Gemini)</span></label>

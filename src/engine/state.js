@@ -44,9 +44,9 @@ export const state = {};
 export function initState() {
   state.appInterfaceLang = localStorage.getItem('pdfReaderInterfaceLang') || null;
   state.voiceListUiReady = false;
-  state.DEFAULT_GEMINI_MODEL = 'gemini-2.5-flash-lite';
-  state.DEFAULT_GEMINI_STUDY_MODEL = 'gemini-3.1-flash-lite';
-  state.DEFAULT_GEMINI_LIVE_MODEL = 'gemini-3.1-flash-live-preview';
+  state.DEFAULT_GEMINI_MODEL = 'gemini-3.1-flash-lite';
+  state.DEFAULT_GEMINI_STUDY_MODEL = 'gemini-3.5-flash-lite';
+  state.DEFAULT_GEMINI_LIVE_MODEL = 'gemini-3.8-live-extended-thinking';
   state.apiKey =
     localStorage.getItem('pdfReaderApiKeyOverride') ||
     'AQ.Ab8RN6J50XweLQmNDAb3B3Dq3GbRZH3iC2w9Fibcdpt0joE92g';
